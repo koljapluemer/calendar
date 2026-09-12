@@ -5,8 +5,10 @@ import '../models/entry.dart';
 import '../repository/entry_repository.dart';
 import 'entry_form_screen.dart';
 
-/// First tab: every entry grouped under its day. Today's heading is always
-/// shown (even with no entries); any other day appears only when it has one.
+/// First tab: entries grouped under their day, for a scrollable window of days
+/// that defaults to today..end of next month and widens via the "Load
+/// previous"/"Load next" buttons. Today's heading is always shown (even with
+/// no entries); any other day appears only when it has one.
 class AgendaScreen extends StatefulWidget {
   const AgendaScreen({super.key, required this.repository});
 
@@ -17,10 +19,19 @@ class AgendaScreen extends StatefulWidget {
 }
 
 class _AgendaScreenState extends State<AgendaScreen> {
+  /// Earliest and latest day currently shown, inclusive. Defaults to
+  /// today..end of next month; "Load previous"/"Load next" widen this one
+  /// month at a time.
+  late DateOnly _rangeStart;
+  late DateOnly _rangeEnd;
+
   @override
   void initState() {
     super.initState();
     widget.repository.addListener(_onChanged);
+    final today = DateOnly.today();
+    _rangeStart = today;
+    _rangeEnd = _endOfMonth(_addMonths(today, 1));
   }
 
   @override
@@ -30,6 +41,32 @@ class _AgendaScreenState extends State<AgendaScreen> {
   }
 
   void _onChanged() => setState(() {});
+
+  static DateOnly _startOfMonth(DateOnly d) => DateOnly(d.year, d.month, 1);
+
+  static DateOnly _addMonths(DateOnly d, int delta) =>
+      DateOnly.fromDateTime(DateTime(d.year, d.month + delta, 1));
+
+  static DateOnly _endOfMonth(DateOnly d) =>
+      DateOnly.fromDateTime(DateTime(d.year, d.month + 1, 0));
+
+  /// First press widens the range to the start of its current month; each
+  /// press after that goes back one further month.
+  void _loadPrevious() {
+    final monthStart = _startOfMonth(_rangeStart);
+    setState(() {
+      _rangeStart = _rangeStart == monthStart
+          ? _addMonths(monthStart, -1)
+          : monthStart;
+    });
+  }
+
+  /// Widens the range to include the next not-yet-shown month.
+  void _loadNext() {
+    setState(() {
+      _rangeEnd = _endOfMonth(_addMonths(_rangeEnd, 1));
+    });
+  }
 
   Future<void> _edit(CalendarEntry entry) async {
     await Navigator.push(
@@ -70,11 +107,27 @@ class _AgendaScreenState extends State<AgendaScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final today = DateOnly.today();
-    final days = widget.repository.entriesByDay();
+    final days = widget.repository
+        .entriesByDay()
+        .where(
+          (day) =>
+              day.key.compareTo(_rangeStart) >= 0 &&
+              day.key.compareTo(_rangeEnd) <= 0,
+        )
+        .toList();
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       children: [
+        Center(
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: OutlinedButton(
+              onPressed: _loadPrevious,
+              child: const Text('Load previous'),
+            ),
+          ),
+        ),
         for (final day in days) ...[
           Padding(
             padding: const EdgeInsets.only(top: 8, bottom: 4),
@@ -126,6 +179,15 @@ class _AgendaScreenState extends State<AgendaScreen> {
               ),
           const SizedBox(height: 16),
         ],
+        Center(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: OutlinedButton(
+              onPressed: _loadNext,
+              child: const Text('Load next'),
+            ),
+          ),
+        ),
       ],
     );
   }
