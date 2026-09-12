@@ -1,5 +1,7 @@
 # calendar
 
+![software main view](docs/screenshot.png)
+
 A minimal Flutter calendar. One entry per `.json` file in a folder you pick;
 an entry is just a **date** and a line of **text** — no times, nothing else.
 Targets Linux desktop and Android (sideload) only.
