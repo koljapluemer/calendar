@@ -90,17 +90,19 @@ flutter analyze
 ## Data format
 
 Each entry is one `*.json` file directly inside the data folder, a single JSON
-object with exactly two keys:
+object with three keys:
 
 ```json
 {
   "date": "2026-08-29",
-  "content": "the entry's text"
+  "content": "the entry's text",
+  "done": false
 }
 ```
 
 - `date` is `YYYY-MM-DD` — a calendar day, no time component.
 - `content` is a plain-text line, shown exactly as typed — no markdown rendering.
+- `done` is a boolean; missing values in older files default to `false`.
 - A missing/invalid `date` falls back to today; a missing `content` to empty.
 - Writes go through a temp file + atomic rename, so a crash mid-write can't
   leave a half-written file.
@@ -115,8 +117,9 @@ See `lib/models/entry.dart` for the read/write logic and
 
 - **Calendar** — every entry grouped under its day. Today's heading is always
   shown (even with no entries); any other day appears only when it has one.
-  Each entry row has an "Edit" icon button (jumps to the Add form, prefilled)
-  and a "Delete" icon button (confirms, then removes the file).
+  Each entry row has an "Edit" icon button (jumps to the Add form, prefilled),
+  a "Done" toggle that strikes through completed entries, and a delete button
+  that must be held for 0.7 seconds.
 - **Add** — a date button (opens a date picker, defaults to today) and a text
   field. "Add" writes a new `.json` file and clears the field for the next one.
 - **Settings** — shows the current data folder and loaded entry count, lets you

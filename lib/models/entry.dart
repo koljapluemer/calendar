@@ -53,13 +53,14 @@ class DateOnly implements Comparable<DateOnly> {
 }
 
 /// A single calendar entry, persisted as one `<name>.json` file directly inside
-/// the data folder. The JSON object has exactly two keys: `date` (`YYYY-MM-DD`)
-/// and `content` (plain text, shown verbatim — no markdown, no time).
+/// the data folder. The JSON object stores `date` (`YYYY-MM-DD`), `content`
+/// (plain text, shown verbatim — no markdown, no time), and `done`.
 class CalendarEntry {
   CalendarEntry({
     required this.file,
     required this.date,
     required this.content,
+    this.done = false,
   });
 
   /// Builds an entry from the decoded JSON object of [file]. A missing or
@@ -67,20 +68,27 @@ class CalendarEntry {
   /// an entry is never "invalid", it just has less in it.
   factory CalendarEntry.fromJson(File file, Map<String, dynamic> json) {
     final rawDate = json['date'];
-    final date = (rawDate is String ? DateOnly.tryParse(rawDate) : null) ??
+    final date =
+        (rawDate is String ? DateOnly.tryParse(rawDate) : null) ??
         DateOnly.today();
     return CalendarEntry(
       file: file,
       date: date,
       content: json['content'] is String ? json['content'] as String : '',
+      done: json['done'] is bool ? json['done'] as bool : false,
     );
   }
 
   final File file;
   DateOnly date;
   String content;
+  bool done;
 
-  Map<String, dynamic> toJson() => {'date': date.toIso(), 'content': content};
+  Map<String, dynamic> toJson() => {
+    'date': date.toIso(),
+    'content': content,
+    'done': done,
+  };
 
   static const JsonEncoder _encoder = JsonEncoder.withIndent('  ');
 

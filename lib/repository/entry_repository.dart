@@ -135,6 +135,12 @@ class EntryRepository extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> setEntryDone(CalendarEntry entry, bool done) async {
+    entry.done = done;
+    await entry.save();
+    notifyListeners();
+  }
+
   Future<void> deleteEntry(CalendarEntry entry) async {
     await entry.delete();
     _entries.remove(entry);
@@ -143,7 +149,9 @@ class EntryRepository extends ChangeNotifier {
 
   String _randomHex(int length) {
     const chars = '0123456789abcdef';
-    return List.generate(length, (_) => chars[_random.nextInt(chars.length)])
-        .join();
+    return List.generate(
+      length,
+      (_) => chars[_random.nextInt(chars.length)],
+    ).join();
   }
 }
